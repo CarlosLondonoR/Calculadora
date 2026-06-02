@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Validador Estadístico de Variables</title>
-  <script src="/Libraries/plotly.min.js"></script>
+  <script src="Libraries/plotly.min.js"></script>
   <style>
-    @font-face{font-family:SuraSans;src:url('/Format/SuraSans-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
-    @font-face{font-family:SuraSans;src:url('/Format/SuraSans-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap}
-    @font-face{font-family:SuraLigera;src:url('/Format/SuraSans-Ligera.otf') format('opentype');font-weight:300;font-style:normal;font-display:swap}
+    @font-face{font-family:SuraSans;src:url('Format/SuraSans-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
+    @font-face{font-family:SuraSans;src:url('Format/SuraSans-Bold.otf') format('opentype');font-weight:700;font-style:normal;font-display:swap}
+    @font-face{font-family:SuraLigera;src:url('Format/SuraSans-Ligera.otf') format('opentype');font-weight:300;font-style:normal;font-display:swap}
     :root{--bg:#f5f7fb;--card:#fff;--text:#111827;--muted:#64748b;--line:#dbe3ef;--soft:#eef3fb;--accent:#0067b1;--accent2:#00a3e0;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--shadow:0 10px 30px rgba(15,23,42,.08);--input:#fff;--chip:#e8f3ff;--grid:#e7edf6;--plotbg:#fff}
     [data-theme="dark"]{--bg:#0b1220;--card:#111a2c;--text:#e5edf8;--muted:#9fb0c7;--line:#26344d;--soft:#172238;--accent:#38bdf8;--accent2:#60a5fa;--shadow:0 10px 30px rgba(0,0,0,.35);--input:#0f172a;--chip:#132e46;--grid:#25324a;--plotbg:#111a2c}
     *{box-sizing:border-box} body{margin:0;font-family:SuraSans,Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -24,7 +24,7 @@
 <body>
 <header><div class="top"><div class="brand"><h1>Validador estadístico de variables</h1><p>Constructor, especificación, diagnóstico econométrico, validación temporal y comparación de ramas.</p></div><div class="actions"><button id="sig1">α 1%</button><button id="sig5" class="active">α 5%</button><button id="sig10">α 10%</button><button id="themeBtn" title="Tema">☀️/🌙</button><button id="clearBtn" class="danger">Limpiar todo</button></div></div></header>
 <main>
-  <div id="loadStatus" class="status">Cargando /BD.csv…</div>
+  <div id="loadStatus" class="status">Cargando BD.csv…</div>
   <div class="grid" style="margin-top:18px">
     <aside class="stack">
       <section class="card"><h2>A. Constructor de variables</h2>
@@ -59,11 +59,15 @@
 const App={raw:[],dates:[],vars:[],data:{},derived:new Set(),selectedX:new Set(),models:[],active:null,seq:0,alpha:.05,theme:localStorage.getItem('theme')||'light',palette:['#1f77ff','#ff3b30','#16a34a','#f59e0b','#a855f7','#06b6d4','#e11d48','#84cc16'],sort:{}};
 document.documentElement.dataset.theme=App.theme;
 const $=id=>document.getElementById(id), fmt=x=>Number.isFinite(x)?(Math.abs(x)>=100?x.toFixed(2):x.toFixed(4)):'—', pct=x=>Number.isFinite(x)?(100*x).toFixed(2)+'%':'—';
-function initApp(){bindUI();loadCsv('/BD.csv').then(txt=>{const parsed=parseCsv(txt);App.dates=parsed.dates;App.data=alignSeries(forwardFillMissingValues(parsed.data));App.vars=parsed.vars.slice();detectAvailableVariables();buildVariableConstructor();buildSelectionPanels();$('loadStatus').className='status ok';$('loadStatus').textContent=`BD.csv cargado: ${App.dates.length} fechas, ${App.vars.length} variables.`;}).catch(e=>{$('loadStatus').className='status bad';$('loadStatus').textContent='No fue posible cargar /BD.csv: '+e.message;});}
-async function loadCsv(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return await r.text();}
-function parseCsv(txt){const rows=txt.replace(/^\uFEFF/,'').trim().split(/\r?\n/).map(r=>r.split(';'));const headers=rows[0].map(s=>s.trim());const vars=headers.slice(1);const dates=[],data={};vars.forEach(v=>data[v]=[]);for(let i=1;i<rows.length;i++){if(!rows[i][0])continue;dates.push(parseDate(rows[i][0]));vars.forEach((v,j)=>data[v].push(toNum(rows[i][j+1])))}return{dates,vars,data};}
-function parseDate(s){s=String(s).trim();if(/^\d{4}-\d{1,2}-\d{1,2}/.test(s))return new Date(s+'T00:00:00');let p=s.split(/[\/\-.]/).map(Number);if(p[2]>1900)return new Date(p[2],p[1]-1,p[0]);return new Date(s);}
-function toNum(x){if(x==null)return NaN;let s=String(x).trim();if(!s)return NaN;s=s.replace(/\s/g,'');if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',', '.');else if(s.includes(',')&&!s.includes('.'))s=s.replace(',', '.');let n=Number(s);return Number.isFinite(n)?n:NaN;}
+function initApp(){bindUI();loadCsvAuto().then(({txt,path})=>{const parsed=parseCsv(txt);App.dates=parsed.dates;App.data=alignSeries(forwardFillMissingValues(parsed.data));App.vars=parsed.vars.slice();detectAvailableVariables();buildVariableConstructor();buildSelectionPanels();$('loadStatus').className='status ok';$('loadStatus').textContent=`BD.csv cargado desde ${path}: ${App.dates.length} fechas, ${App.vars.length} variables. Separador detectado: ${parsed.delimiter===';'?'punto y coma':parsed.delimiter==='\t'?'tab':'coma'}.`;}).catch(e=>{$('loadStatus').className='status bad';$('loadStatus').textContent='No fue posible cargar BD.csv. Verifique que el archivo esté en el root del repositorio junto a index.html. Detalle: '+e.message;});}
+async function loadCsv(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error(`${path}: HTTP ${r.status}`);return await r.text();}
+async function loadCsvAuto(){const candidates=['BD.csv','./BD.csv','bd.csv','./bd.csv','/BD.csv'];let errors=[];for(const path of candidates){try{return{txt:await loadCsv(path),path}}catch(e){errors.push(e.message)}}throw new Error(errors.join(' | '));}
+function detectDelimiter(txt){const first=(txt.replace(/^\uFEFF/,'').split(/\r?\n/).find(l=>l.trim())||'');const counts={',':countDelimiter(first,','),';':countDelimiter(first,';'),'\t':countDelimiter(first,'\t')};return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0]||',';}
+function countDelimiter(line,sep){let n=0,q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"')i++;else q=!q}else if(c===sep&&!q)n++}return n;}
+function parseDelimitedRows(txt,sep){const rows=[];let row=[],cell='',q=false;txt=txt.replace(/^\uFEFF/,'');for(let i=0;i<txt.length;i++){const c=txt[i];if(c==='"'){if(q&&txt[i+1]==='"'){cell+='"';i++}else q=!q}else if(c===sep&&!q){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cell);if(row.some(v=>String(v).trim()!==''))rows.push(row);row=[];cell=''}else cell+=c}row.push(cell);if(row.some(v=>String(v).trim()!==''))rows.push(row);return rows;}
+function parseCsv(txt){const delimiter=detectDelimiter(txt);const rows=parseDelimitedRows(txt.trim(),delimiter);if(!rows.length)throw new Error('CSV vacío.');const headers=rows[0].map(s=>String(s).trim());if(headers.length<2)throw new Error('El CSV debe tener Fecha en la primera columna y al menos una serie.');const vars=headers.slice(1);const dates=[],data={};vars.forEach(v=>data[v]=[]);for(let i=1;i<rows.length;i++){const r=rows[i];if(!r[0])continue;const d=parseDate(r[0]);if(Number.isNaN(d.getTime()))continue;dates.push(d);vars.forEach((v,j)=>data[v].push(toNum(r[j+1])))}return{dates,vars,data,delimiter};}
+function parseDate(s){s=String(s).trim();if(/^\d{4}-\d{1,2}-\d{1,2}/.test(s))return new Date(s.slice(0,10)+'T00:00:00');let p=s.split(/[\/\-.]/).map(Number);if(p.length>=3){if(p[2]>1900)return new Date(p[2],p[1]-1,p[0]);if(p[0]>1900)return new Date(p[0],p[1]-1,p[2]);}return new Date(s);}
+function toNum(x){if(x==null)return NaN;let s=String(x).trim();if(!s)return NaN;s=s.replace(/\s/g,'').replace(/%$/,'');if(s.includes('.')&&s.includes(',')){const lastDot=s.lastIndexOf('.'),lastComma=s.lastIndexOf(',');s=lastComma>lastDot?s.replace(/\./g,'').replace(',', '.'):s.replace(/,/g,'')}else if(s.includes(',')&&!s.includes('.')){s=s.replace(',', '.')}let n=Number(s);return Number.isFinite(n)?n:NaN;}
 function forwardFillMissingValues(data){const out={};Object.keys(data).forEach(k=>{let last=NaN;out[k]=data[k].map(v=>{if(Number.isFinite(v)){last=v;return v}return last})});return out;}
 function alignSeries(data){const n=App.dates.length;Object.keys(data).forEach(k=>{while(data[k].length<n)data[k].push(NaN);if(data[k].length>n)data[k]=data[k].slice(0,n)});return data;}
 function detectAvailableVariables(){App.vars=App.vars.filter(v=>App.data[v]);}
