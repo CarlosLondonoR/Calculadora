@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Validador Estadístico de Variables - V23</title>
+  <title>Validador Estadístico de Variables - V24</title>
   <script src="Libraries/plotly.min.js"></script>
   <style>
     @font-face{font-family:SuraSans;src:url('Format/SuraSans-Regular.otf') format('opentype');font-weight:400;font-style:normal;font-display:swap}
@@ -22,7 +22,7 @@
   </style>
 </head>
 <body>
-<header><div class="top"><div class="brand"><h1>Validador estadístico de variables - V23</h1><p>Constructor, especificación, diagnóstico econométrico, validación temporal y comparación de ramas.</p></div><div class="actions"><button id="sig1">α 1%</button><button id="sig5" class="active">α 5%</button><button id="sig10">α 10%</button><button id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema"></button><button id="clearBtn" class="danger">Limpiar todo</button></div></div></header>
+<header><div class="top"><div class="brand"><h1>Validador estadístico de variables - V24</h1><p>Constructor, especificación, diagnóstico econométrico, validación temporal y comparación de ramas.</p></div><div class="actions"><button id="sig1">α 1%</button><button id="sig5" class="active">α 5%</button><button id="sig10">α 10%</button><button id="themeBtn" title="Cambiar tema" aria-label="Cambiar tema"></button><button id="clearBtn" class="danger">Limpiar todo</button></div></div></header>
 <main>
   <div id="loadStatus" class="status hidden"></div>
   <div class="grid" style="margin-top:18px">
@@ -132,7 +132,7 @@ window.AppRenameDerived=renameDerivedVariable;window.AppDeleteDerived=deleteDeri
 function buildSelectionPanels(){fillSelect($('ySelect'),App.vars);renderXList();renderModelFormulaBuilder();}
 function renderXList(){const q=($('varSearch')?.value||'').toLowerCase(),sel=$('xVarSelect');if(sel){const current=sel.value;const opts=App.vars.filter(v=>v.toLowerCase().includes(q));sel.innerHTML=opts.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if(opts.includes(current))sel.value=current}$('xList').innerHTML=App.modelTerms.map(t=>`<div class="varitem"><span>${esc(termLabel(t))}</span><button class="small danger" onclick="AppRemoveModelTerm('${t.id}')">Eliminar</button></div>`).join('')||'<div class="muted">Sin variables explicativas agregadas.</div>';renderModelFormulaBuilder();}
 function termLabel(t){return t.lag>0?`${t.var}_lag${t.lag}`:t.var}
-function addModelTerm(){const v=$('xVarSelect')?.value,lag=Math.max(0,+($('xLagVal')?.value||0));if(!v){alert('Seleccione una variable explicativa.');return}if(App.modelTerms.length>=8){alert('Máximo 8 variables explicativas.');return}App.modelTerms.push({id:'T'+Date.now()+Math.random().toString(16).slice(2),var:v,lag});renderXList();}
+function addModelTerm(){const v=$('xVarSelect')?.value,lag=Math.max(0,+($('xLagVal')?.value||0));if(!v){alert('Seleccione una variable explicativa.');return}if(App.modelTerms.length>=16){alert('Máximo 16 variables explicativas.');return}App.modelTerms.push({id:'T'+Date.now()+Math.random().toString(16).slice(2),var:v,lag});renderXList();}
 function removeModelTerm(id){App.modelTerms=App.modelTerms.filter(t=>t.id!==id);renderXList();}
 window.AppRemoveModelTerm=removeModelTerm;
 function selectedX(){return App.modelTerms.filter(t=>!t.lag).map(t=>t.var)}
